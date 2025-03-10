@@ -120,9 +120,8 @@
           <label><input type="radio" name="rollMode" value="Player" /> Player Roll</label>
         </fieldset>
 
-        <!-- GM Roll Panel -->
+        <!-- GM Roll Panel (only Modifier field now) -->
         <div id="gmRollPanel">
-          <input type="number" id="gmDrivingBase" placeholder="Driving Check Base" />
           <input type="number" id="gmModifier" placeholder="Modifier (optional)" />
           <button type="button" id="rollDiceButton">Roll Dice (GM)</button>
           <div id="gmRollResult"></div>
@@ -131,6 +130,7 @@
         <!-- Player Roll Panel -->
         <div id="playerRollPanel" style="display: none;">
           <input type="text" id="playerRollResult" placeholder="Enter Roll Result (e.g., 18 or 18!)" />
+          <input type="number" id="playerModifier" placeholder="Modifier (optional)" />
         </div>
 
         <button type="submit">Apply Action</button>

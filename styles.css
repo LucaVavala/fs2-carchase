@@ -71,6 +71,26 @@ ul {
   margin: 0 0 0.2em;
 }
 
+.vehicleCard p {
+  margin: 0.2em 0;
+}
+
+.cpContainer {
+  display: flex;
+  align-items: center;
+}
+
+.cpContainer span {
+  margin-right: 0.5em;
+}
+
+.cpContainer button {
+  font-size: 0.8em;
+  padding: 0.2em 0.4em;
+  margin-left: 0.3em;
+  cursor: pointer;
+}
+
 #logList li {
   border-bottom: 1px solid #ddd;
   padding: 0.5em 0;

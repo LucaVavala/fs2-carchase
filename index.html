@@ -1,11 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Feng Shui 2 Vehicle Chase Tracker</title>
-  <link rel="stylesheet" href="styles.css">
-  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="manifest" href="manifest.json" />
 </head>
 <body>
   <header>
@@ -19,18 +19,40 @@
         <label for="vehicleType">Vehicle Type:</label>
         <select id="vehicleType" required>
           <option value="" disabled selected>Select vehicle type</option>
-          <!-- Predefined vehicles; you can add more as needed -->
-          <option value="Maserati">Maserati</option>
-          <option value="Police Pursuit Van">Police Pursuit Van</option>
+          <!-- Predefined vehicles from the book table -->
+          <option value="Motorcycle">Motorcycle</option>
+          <option value="Snowmobile">Snowmobile</option>
+          <option value="Horse">Horse</option>
+          <option value="Family Sedan">Family Sedan</option>
+          <option value="Compact Car">Compact Car</option>
+          <option value="Sport Utility Vehicle, Civilian">Sport Utility Vehicle, Civilian</option>
+          <option value="Sport Utility Vehicle, Security">Sport Utility Vehicle, Security</option>
+          <option value="Pickup Truck">Pickup Truck</option>
+          <option value="Luxury Sedan">Luxury Sedan</option>
+          <option value="Cop Car">Cop Car</option>
+          <option value="Muscle Car">Muscle Car</option>
+          <option value="Sports Car">Sports Car</option>
+          <option value="Jeep, Civilian">Jeep, Civilian</option>
+          <option value="Jeep, Military">Jeep, Military</option>
+          <option value="Armored Army Vehicle">Armored Army Vehicle</option>
+          <option value="Panel Van">Panel Van</option>
+          <option value="Panel Truck">Panel Truck</option>
+          <option value="Eighteen Wheeler">Eighteen Wheeler</option>
+          <option value="Junker Car">Junker Car</option>
+          <option value="Junker Pickup Truck">Junker Pickup Truck</option>
+          <option value="Vintage Van">Vintage Van</option>
+          <option value="Tank">Tank</option>
+          <!-- "Custom" option -->
           <option value="Custom">Custom</option>
         </select>
-        <input type="text" id="vehicleName" placeholder="Vehicle Name" required>
+
+        <input type="text" id="vehicleName" placeholder="Vehicle Name" required />
 
         <!-- Manual inputs appear only if "Custom" is selected -->
-        <div id="customStats" style="display:none;">
-          <input type="number" id="acceleration" placeholder="Acceleration" required>
-          <input type="number" id="handling" placeholder="Handling" required>
-          <input type="number" id="frame" placeholder="Frame" required>
+        <div id="customStats" style="display: none;">
+          <input type="number" id="acceleration" placeholder="Acceleration" />
+          <input type="number" id="handling" placeholder="Handling" />
+          <input type="number" id="frame" placeholder="Frame" />
         </div>
 
         <label for="vehicleRole">Role:</label>
@@ -44,6 +66,7 @@
           <option value="GM">GM Controlled</option>
           <option value="Player">Player Controlled</option>
         </select>
+
         <button type="submit">Add Vehicle</button>
       </form>
     </section>
@@ -80,28 +103,30 @@
           <option value="ramming">Ramming/Sideswipe</option>
           <option value="driverAttack">Driver Attack</option>
         </select>
+
         <label for="targetVehicle">Select Vehicle:</label>
         <select id="targetVehicle" required></select>
-        
+
         <!-- Roll Mode: GM or Player -->
         <fieldset>
           <legend>Roll Mode</legend>
-          <label><input type="radio" name="rollMode" value="GM" checked> GM Roll</label>
-          <label><input type="radio" name="rollMode" value="Player"> Player Roll</label>
+          <label><input type="radio" name="rollMode" value="GM" checked /> GM Roll</label>
+          <label><input type="radio" name="rollMode" value="Player" /> Player Roll</label>
         </fieldset>
 
         <!-- GM Roll Panel -->
         <div id="gmRollPanel">
-          <input type="number" id="gmDrivingScore" placeholder="Driving Score" required>
-          <input type="number" id="gmModifier" placeholder="Modifier (optional)">
+          <input type="number" id="gmDrivingScore" placeholder="GM Driving Score" />
+          <input type="number" id="gmOpponentScore" placeholder="Opponent's Driving Score" />
+          <input type="number" id="gmModifier" placeholder="Modifier (optional)" />
           <button type="button" id="rollDiceButton">Roll Dice</button>
           <div id="gmRollResult"></div>
         </div>
 
         <!-- Player Roll Panel -->
-        <div id="playerRollPanel" style="display:none;">
-          <input type="text" id="playerRollResult" placeholder="Enter Roll Result (e.g., 8 or 8!)" required>
-          <input type="number" id="opponentScore" placeholder="Opponent's Driving Score" required>
+        <div id="playerRollPanel" style="display: none;">
+          <input type="text" id="playerRollResult" placeholder="Enter Roll Result (e.g., 8 or 8!)" />
+          <input type="number" id="opponentScore" placeholder="Opponent's Driving Score" />
         </div>
 
         <button type="submit">Apply Action</button>

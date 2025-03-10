@@ -1,51 +1,107 @@
-// Predefined vehicles (you can add more as needed)
+/******************************************************************************
+ *  PREDEFINED VEHICLES
+ *  These store base stats: acceleration, handling, frame.
+ *  Squeal = handling + 2, Crunch = frame + 2 (computed at runtime).
+ *****************************************************************************/
 const predefinedVehicles = {
-  "Maserati": { acceleration: 8, handling: 7, frame: 6 },
-  "Police Pursuit Van": { acceleration: 6, handling: 5, frame: 8 }
+  "Motorcycle": { acceleration: 8, handling: 8, frame: 0 },
+  "Snowmobile": { acceleration: 8, handling: 6, frame: 0 },
+  "Horse": { acceleration: 6, handling: 7, frame: 0 },
+  "Family Sedan": { acceleration: 6, handling: 8, frame: 7 },
+  "Compact Car": { acceleration: 6, handling: 8, frame: 5 },
+  "Sport Utility Vehicle, Civilian": { acceleration: 6, handling: 6, frame: 8 },
+  "Sport Utility Vehicle, Security": { acceleration: 6, handling: 6, frame: 9 },
+  "Pickup Truck": { acceleration: 6, handling: 6, frame: 7 },
+  "Luxury Sedan": { acceleration: 7, handling: 8, frame: 7 },
+  "Cop Car": { acceleration: 8, handling: 8, frame: 6 },
+  "Muscle Car": { acceleration: 8, handling: 7, frame: 7 },
+  "Sports Car": { acceleration: 9, handling: 8, frame: 5 },
+  "Jeep, Civilian": { acceleration: 7, handling: 7, frame: 6 },
+  "Jeep, Military": { acceleration: 8, handling: 7, frame: 6 },
+  "Armored Army Vehicle": { acceleration: 4, handling: 5, frame: 10 },
+  "Panel Van": { acceleration: 6, handling: 6, frame: 6 },
+  "Panel Truck": { acceleration: 6, handling: 6, frame: 7 },
+  "Eighteen Wheeler": { acceleration: 5, handling: 5, frame: 9 },
+  "Junker Car": { acceleration: 6, handling: 6, frame: 5 },
+  "Junker Pickup Truck": { acceleration: 5, handling: 6, frame: 5 },
+  "Vintage Van": { acceleration: 6, handling: 5, frame: 5 },
+  "Tank": { acceleration: 3, handling: 2, frame: 12 }
 };
 
 document.addEventListener('DOMContentLoaded', () => {
   let vehicles = [];
   let vehicleIdCounter = 0;
-  let chaseGap = "Far"; // overall chase gap (set manually via dropdown)
+  let chaseGap = "Far"; // Overall chase gap
 
   // DOM elements
   const addVehicleForm = document.getElementById('addVehicleForm');
   const vehicleTypeSelect = document.getElementById('vehicleType');
   const customStatsDiv = document.getElementById('customStats');
-  const vehicleListSelect = document.getElementById('targetVehicle');
+  const vehicleNameInput = document.getElementById('vehicleName');
+  const accelerationInput = document.getElementById('acceleration');
+  const handlingInput = document.getElementById('handling');
+  const frameInput = document.getElementById('frame');
+  const vehicleRoleSelect = document.getElementById('vehicleRole');
+  const controlTypeSelect = document.getElementById('controlType');
+
   const chaseGapSelect = document.getElementById('chaseGap');
   const pursuerList = document.getElementById('pursuerList');
   const evaderList = document.getElementById('evaderList');
+
+  const targetVehicleSelect = document.getElementById('targetVehicle');
   const actionForm = document.getElementById('actionForm');
-  const logList = document.getElementById('logList');
-  const resetButton = document.getElementById('resetChase');
-  
-  const gmRollPanel = document.getElementById('gmRollPanel');
-  const playerRollPanel = document.getElementById('playerRollPanel');
-  const rollDiceButton = document.getElementById('rollDiceButton');
-  const gmRollResultDiv = document.getElementById('gmRollResult');
+  const actionTypeSelect = document.getElementById('actionType');
   const rollModeRadios = document.getElementsByName('rollMode');
 
-  // When vehicle type changes, show/hide custom inputs
+  // GM mode inputs
+  const gmRollPanel = document.getElementById('gmRollPanel');
+  const gmDrivingScoreInput = document.getElementById('gmDrivingScore');
+  const gmOpponentScoreInput = document.getElementById('gmOpponentScore');
+  const gmModifierInput = document.getElementById('gmModifier');
+  const rollDiceButton = document.getElementById('rollDiceButton');
+  const gmRollResultDiv = document.getElementById('gmRollResult');
+
+  // Player mode inputs
+  const playerRollPanel = document.getElementById('playerRollPanel');
+  const playerRollResultInput = document.getElementById('playerRollResult');
+  const opponentScoreInput = document.getElementById('opponentScore');
+
+  const logList = document.getElementById('logList');
+  const resetButton = document.getElementById('resetChase');
+
+  /******************************************************************************
+   * 1. Show/hide custom stats when "Custom" is chosen
+   *****************************************************************************/
   vehicleTypeSelect.addEventListener('change', (e) => {
     if (e.target.value === "Custom") {
       customStatsDiv.style.display = "block";
+      // Make them required only if custom
+      accelerationInput.required = true;
+      handlingInput.required = true;
+      frameInput.required = true;
     } else {
       customStatsDiv.style.display = "none";
+      accelerationInput.required = false;
+      handlingInput.required = false;
+      frameInput.required = false;
     }
   });
 
-  // Add vehicle form submission
+  /******************************************************************************
+   * 2. Add vehicle form submission
+   *****************************************************************************/
   addVehicleForm.addEventListener('submit', (e) => {
     e.preventDefault();
     const type = vehicleTypeSelect.value;
-    const name = document.getElementById('vehicleName').value;
+    const name = vehicleNameInput.value.trim();
+    const role = vehicleRoleSelect.value; // "Pursuer" or "Evader"
+    const control = controlTypeSelect.value; // "GM" or "Player"
+
     let acceleration, handling, frame;
     if (type === "Custom") {
-      acceleration = parseInt(document.getElementById('acceleration').value);
-      handling = parseInt(document.getElementById('handling').value);
-      frame = parseInt(document.getElementById('frame').value);
+      acceleration = parseInt(accelerationInput.value, 10) || 0;
+      handling = parseInt(handlingInput.value, 10) || 0;
+      frame = parseInt(frameInput.value, 10) || 0;
     } else {
       // Use predefined values
       const stats = predefinedVehicles[type];
@@ -53,8 +109,6 @@ document.addEventListener('DOMContentLoaded', () => {
       handling = stats.handling;
       frame = stats.frame;
     }
-    const role = document.getElementById('vehicleRole').value; // Pursuer/Evader
-    const control = document.getElementById('controlType').value; // GM/Player
 
     // Derived stats
     const squeal = handling + 2;
@@ -75,180 +129,42 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     vehicles.push(vehicle);
-    updateVehicleLists();
     updateVehicleSelect();
+    updateVehicleLists();
+
     addVehicleForm.reset();
     customStatsDiv.style.display = "none";
-    logEvent(`Added vehicle: ${name} (${role}, ${control})`);
+    accelerationInput.required = false;
+    handlingInput.required = false;
+    frameInput.required = false;
+
+    logEvent(`Added vehicle: ${name} (Type: ${type}, Role: ${role}, Control: ${control})`);
   });
 
-  // Update the dropdown for selecting a target vehicle (all vehicles)
+  /******************************************************************************
+   * 3. Update vehicle dropdown for actions
+   *****************************************************************************/
   function updateVehicleSelect() {
-    vehicleListSelect.innerHTML = '';
-    vehicles.forEach(v => {
+    targetVehicleSelect.innerHTML = '';
+    vehicles.forEach((v) => {
       const option = document.createElement('option');
       option.value = v.id;
       option.textContent = `${v.name} (${v.role}, ${v.control})`;
-      vehicleListSelect.appendChild(option);
+      targetVehicleSelect.appendChild(option);
     });
   }
 
-  // Update the dashboard lists for pursuers and evaders
+  /******************************************************************************
+   * 4. Render pursuers and evaders with "cards" showing full stats
+   *****************************************************************************/
   function updateVehicleLists() {
     pursuerList.innerHTML = '';
     evaderList.innerHTML = '';
-    vehicles.forEach(v => {
+
+    vehicles.forEach((v) => {
       const li = document.createElement('li');
-      li.className = "vehicleItem";
-      li.textContent = `${v.name}: ${v.chasePoints} CP`;
-      if (v.role === "Pursuer") {
-        pursuerList.appendChild(li);
-      } else {
-        evaderList.appendChild(li);
-      }
-    });
-  }
-
-  // Update overall chase gap from dropdown
-  chaseGapSelect.addEventListener('change', (e) => {
-    chaseGap = e.target.value;
-    logEvent(`Chase Gap set to: ${chaseGap}`);
-  });
-
-  // Toggle roll panels based on roll mode selection
-  rollModeRadios.forEach(radio => {
-    radio.addEventListener('change', () => {
-      if (document.querySelector('input[name="rollMode"]:checked').value === "GM") {
-        gmRollPanel.style.display = "block";
-        playerRollPanel.style.display = "none";
-      } else {
-        gmRollPanel.style.display = "none";
-        playerRollPanel.style.display = "block";
-      }
-    });
-  });
-
-  // GM Roll Dice button handler: simulate two d6 and calculate final result
-  rollDiceButton.addEventListener('click', () => {
-    const drivingScore = parseInt(document.getElementById('gmDrivingScore').value);
-    const modifier = parseInt(document.getElementById('gmModifier').value) || 0;
-    if (isNaN(drivingScore)) {
-      alert("Please enter a valid Driving Score.");
-      return;
-    }
-    // Simulate two d6 rolls
-    const die1 = rollDie();
-    const die2 = rollDie();
-    let boxcars = (die1 === 6 && die2 === 6);
-    let finalRoll = die1 + die2 + drivingScore + modifier;
-    // Display results in gmRollResultDiv
-    let resultText = `Dice: ${die1}, ${die2} → Final Result: ${finalRoll}`;
-    if (boxcars) {
-      resultText += " !"; // exclamation mark for boxcars
-    }
-    gmRollResultDiv.textContent = resultText;
-    logEvent(`GM rolled: ${die1} and ${die2} (Driving Score: ${drivingScore}, Modifier: ${modifier}) = ${finalRoll}${boxcars ? "!" : ""}`);
-    // Store the final roll result in a hidden field (or you can set the value of gmDrivingScore to finalRoll)
-    document.getElementById('gmDrivingScore').dataset.rollResult = finalRoll;
-  });
-
-  function rollDie() {
-    return Math.floor(Math.random() * 6) + 1;
-  }
-
-  // Handle action form submission
-  actionForm.addEventListener('submit', (e) => {
-    e.preventDefault();
-    const actionType = document.getElementById('actionType').value;
-    const targetId = parseInt(vehicleListSelect.value);
-    const vehicle = vehicles.find(v => v.id === targetId);
-    if (!vehicle) return;
-    const rollMode = document.querySelector('input[name="rollMode"]:checked').value;
-    let rollResult = 0;
-    let opponentScore = 0;
-    
-    if (rollMode === "GM") {
-      // Use the final result stored from the GM roll dice panel
-      rollResult = parseInt(document.getElementById('gmDrivingScore').dataset.rollResult);
-      if (isNaN(rollResult)) {
-        alert("Please roll the dice first.");
-        return;
-      }
-    } else {
-      // Player mode: use manually entered roll result.
-      const playerInput = document.getElementById('playerRollResult').value;
-      // Remove any exclamation mark and parse the number
-      rollResult = parseInt(playerInput.replace('!', ''));
-      if (isNaN(rollResult)) {
-        alert("Please enter a valid roll result.");
-        return;
-      }
-      opponentScore = parseInt(document.getElementById('opponentScore').value);
-      if (isNaN(opponentScore)) {
-        alert("Please enter the opponent's Driving Score.");
-        return;
-      }
-    }
-    
-    // Calculate CP change based on action type.
-    let cpChange = 0;
-    let bonus = 0;
-    if (actionType === "driving") {
-      bonus = (vehicle.squeal);
-      if (rollMode === "GM") {
-        cpChange = rollResult + bonus;
-      } else {
-        cpChange = rollResult + bonus - opponentScore;
-      }
-    } else if (actionType === "ramming") {
-      bonus = (vehicle.crunch);
-      if (rollMode === "GM") {
-        cpChange = rollResult + bonus;
-      } else {
-        cpChange = rollResult + bonus - opponentScore;
-      }
-    } else if (actionType === "driverAttack") {
-      if (rollMode === "GM") {
-        cpChange = - (rollResult + 5);
-      } else {
-        cpChange = - ((rollResult - opponentScore) + 5);
-      }
-    }
-    
-    vehicle.chasePoints += cpChange;
-    if (vehicle.chasePoints < 0) vehicle.chasePoints = 0;
-    // Update the vehicle's CP display (we update entire dashboard)
-    updateVehicleLists();
-    
-    let actionDescription = `${actionType === "driving" ? "Driving Check" : actionType === "ramming" ? "Ramming/Sideswipe" : "Driver Attack"} on ${vehicle.name} `;
-    actionDescription += (rollMode === "GM" ? `(GM Roll: ${rollResult})` : `(Player Roll: ${rollResult}, Opponent: ${opponentScore})`);
-    actionDescription += ` with bonus ${bonus} results in ${cpChange >= 0 ? "adding" : "subtracting"} ${Math.abs(cpChange)} CP.`;
-    if (vehicle.chasePoints >= 35) {
-      actionDescription += ` ${vehicle.name} has reached critical condition!`;
-    }
-    logEvent(actionDescription);
-    // Reset the roll panels for next action
-    actionForm.reset();
-    gmRollResultDiv.textContent = "";
-    // Re-set roll mode to GM by default
-    document.querySelector('input[name="rollMode"][value="GM"]').checked = true;
-    gmRollPanel.style.display = "block";
-    playerRollPanel.style.display = "none";
-  });
-
-  // Reset chase: reset chase points for all vehicles
-  resetButton.addEventListener('click', () => {
-    vehicles.forEach(v => {
-      v.chasePoints = 0;
-    });
-    updateVehicleLists();
-    logEvent('New chase started. All vehicles reset.');
-  });
-
-  // Log event helper
-  function logEvent(message) {
-    const li = document.createElement('li');
-    li.textContent = message;
-    logList.appendChild(li);
-  }
-});
+      li.className = "vehicleCard";
+      li.innerHTML = `
+        <h4>${v.name} (${v.control})</h4>
+        <p>Acceleration: ${v.acceleration}</p>
+       

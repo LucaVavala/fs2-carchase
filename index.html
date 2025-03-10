@@ -19,7 +19,9 @@
         <label for="vehicleType">Vehicle Type:</label>
         <select id="vehicleType" required>
           <option value="" disabled selected>Select vehicle type</option>
-          <!-- Predefined vehicles from the manual -->
+          <!-- New predefined vehicle at the top -->
+          <option value="73 Chevelle">73 Chevelle</option>
+          <!-- Other predefined vehicles -->
           <option value="Motorcycle">Motorcycle</option>
           <option value="Snowmobile">Snowmobile</option>
           <option value="Horse">Horse</option>
@@ -143,9 +145,14 @@
       <ul id="logList"></ul>
     </section>
 
-    <!-- Reset Button -->
+    <!-- Reset and Data Management Section -->
     <section id="resetSection">
       <button id="resetChase">New Chase (Reset Vehicles)</button>
+    </section>
+    <section id="dataSection">
+      <button id="exportButton">Export Data</button>
+      <input type="file" id="importFileInput" accept=".json" style="display: none;" />
+      <button id="importButton">Import Data</button>
     </section>
   </main>
   <script src="script.js"></script>

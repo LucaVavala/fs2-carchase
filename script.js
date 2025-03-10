@@ -1,7 +1,7 @@
 /******************************************************************************
  * PREDEFINED VEHICLES
  * Each entry includes: acceleration, handling, and frame.
- * (No "driving" stat is provided, as that is entered manually.)
+ * (No "driving" stat is provided, since that is entered manually.)
  * Derived stats:
  *    Squeal = handling + 2
  *    Crunch = frame + 2
@@ -60,13 +60,12 @@ document.addEventListener('DOMContentLoaded', () => {
   const actionTypeSelect = document.getElementById('actionType');
   const rollModeRadios = document.getElementsByName('rollMode');
 
-  // GM mode inputs
-  // Removed GM Driving Base input; now only a modifier field remains.
+  // GM mode inputs – note: no Driving Base now, only modifier.
   const gmModifierInput = document.getElementById('gmModifier');
   const rollDiceButton = document.getElementById('rollDiceButton');
   const gmRollResultDiv = document.getElementById('gmRollResult');
 
-  // Player mode inputs
+  // Player mode inputs – includes modifier.
   const playerRollPanel = document.getElementById('playerRollPanel');
   const playerRollResultInput = document.getElementById('playerRollResult');
   const playerModifierInput = document.getElementById('playerModifier');
@@ -100,7 +99,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const name = vehicleNameInput.value.trim();
     const role = vehicleRoleSelect.value;
     const control = controlTypeSelect.value;
-    // Get driving score from input (always provided)
     const driving = parseInt(drivingInput.value, 10) || 0;
     let acceleration, handling, frame;
     if (type === "Custom") {
@@ -115,6 +113,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     const squeal = handling + 2;
     const crunch = frame + 2;
+    // Initialize condition stat at 0.
+    const condition = 0;
 
     const vehicle = {
       id: vehicleIdCounter++,
@@ -127,6 +127,7 @@ document.addEventListener('DOMContentLoaded', () => {
       squeal,
       crunch,
       chasePoints: 0,
+      condition,    // New stat
       role,
       control
     };
@@ -162,7 +163,8 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   /******************************************************************************
-   * 4. Render vehicle cards in dashboard lists with a "+" button for CP
+   * 4. Render vehicle cards in dashboard lists with CP and Condition,
+   *    each with "+" and "–" buttons.
    *****************************************************************************/
   function updateVehicleLists() {
     pursuerList.innerHTML = '';
@@ -178,6 +180,11 @@ document.addEventListener('DOMContentLoaded', () => {
         <p>Driving Score: ${v.driving}</p>
         <p class="cpContainer">Chase Points: <span id="cp-${v.id}">${v.chasePoints}</span>
            <button data-id="${v.id}" class="incCP">+</button>
+           <button data-id="${v.id}" class="decCP">–</button>
+        </p>
+        <p class="condContainer">Condition: <span id="cond-${v.id}">${v.condition}</span>
+           <button data-id="${v.id}" class="incCond">+</button>
+           <button data-id="${v.id}" class="decCond">–</button>
         </p>
       `;
       if (v.role === "Pursuer") {
@@ -186,6 +193,7 @@ document.addEventListener('DOMContentLoaded', () => {
         evaderList.appendChild(li);
       }
     });
+    // Attach event listeners to CP buttons
     document.querySelectorAll('.incCP').forEach(button => {
       button.addEventListener('click', () => {
         const id = parseInt(button.dataset.id, 10);
@@ -194,6 +202,42 @@ document.addEventListener('DOMContentLoaded', () => {
           veh.chasePoints++;
           updateVehicleLists();
           logEvent(`Manually increased CP for ${veh.name} to ${veh.chasePoints}`);
+        }
+      });
+    });
+    document.querySelectorAll('.decCP').forEach(button => {
+      button.addEventListener('click', () => {
+        const id = parseInt(button.dataset.id, 10);
+        const veh = vehicles.find(v => v.id === id);
+        if (veh) {
+          veh.chasePoints--;
+          if (veh.chasePoints < 0) veh.chasePoints = 0;
+          updateVehicleLists();
+          logEvent(`Manually decreased CP for ${veh.name} to ${veh.chasePoints}`);
+        }
+      });
+    });
+    // Attach event listeners to Condition buttons
+    document.querySelectorAll('.incCond').forEach(button => {
+      button.addEventListener('click', () => {
+        const id = parseInt(button.dataset.id, 10);
+        const veh = vehicles.find(v => v.id === id);
+        if (veh) {
+          veh.condition++;
+          updateVehicleLists();
+          logEvent(`Manually increased Condition for ${veh.name} to ${veh.condition}`);
+        }
+      });
+    });
+    document.querySelectorAll('.decCond').forEach(button => {
+      button.addEventListener('click', () => {
+        const id = parseInt(button.dataset.id, 10);
+        const veh = vehicles.find(v => v.id === id);
+        if (veh) {
+          veh.condition--;
+          if (veh.condition < 0) veh.condition = 0;
+          updateVehicleLists();
+          logEvent(`Manually decreased Condition for ${veh.name} to ${veh.condition}`);
         }
       });
     });
@@ -227,14 +271,14 @@ document.addEventListener('DOMContentLoaded', () => {
   switchRollMode("GM");
 
   /******************************************************************************
-   * 7. GM Roll Dice Button: Roll 2d6 (one positive, one negative) with exploding dice.
-   *    - For each die, if a 6 is rolled, roll again and add.
-   *    - The final dice outcome = (Positive Die Total) - (Negative Die Total).
+   * 7. GM Roll Dice Button:
+   *    - Roll 2d6: one die is treated as positive, one as negative.
+   *    - Each die "explodes" (if it comes up 6, reroll and add).
+   *    - Final dice outcome = (Positive Total) – (Negative Total).
    *    - If both dice are 6 on the first roll, mark as Boxcars.
-   *    - Final Check = Acting Vehicle's Driving + Outcome + Modifier.
+   *    - Final Check = Acting Vehicle's Driving + diceOutcome + Modifier.
    *****************************************************************************/
   rollDiceButton.addEventListener('click', () => {
-    // Get acting vehicle from actingVehicleSelect
     const actingId = parseInt(actingVehicleSelect.value, 10);
     const actingVehicle = vehicles.find(v => v.id === actingId);
     if (!actingVehicle) {
@@ -243,7 +287,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     const modifier = parseInt(gmModifierInput.value, 10) || 0;
 
-    // Roll two dice
+    // Roll two dice for positive and negative
     const posInitial = rollDie();
     const negInitial = rollDie();
     const boxcars = (posInitial === 6 && negInitial === 6);
@@ -251,12 +295,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const negTotal = rollExplodingDie(negInitial);
     const diceOutcome = posTotal - negTotal;
 
-    // Final Check = Acting Vehicle's Driving + diceOutcome + modifier
+    // Final Check = Acting Vehicle's Driving + diceOutcome + Modifier
     const finalCheck = actingVehicle.driving + diceOutcome + modifier;
-    // Store final check in gmRollResultDiv's dataset for use in action submission
     gmRollResultDiv.dataset.finalCheck = finalCheck;
-
-    let resultText = `Positive Die: ${posTotal} (initial: ${posInitial}), Negative Die: ${negTotal} (initial: ${negInitial}) → Dice Outcome: ${diceOutcome}. Final Check = Acting Driving (${actingVehicle.driving}) + ${diceOutcome} + Modifier (${modifier}) = ${finalCheck}`;
+    let resultText = `Positive Die: ${posTotal} (initial: ${posInitial}), Negative Die: ${negTotal} (initial: ${negInitial}) → Dice Outcome: ${diceOutcome}. Final Check = ${actingVehicle.driving} + ${diceOutcome} + Modifier (${modifier}) = ${finalCheck}`;
     if (boxcars) resultText += " (Boxcars!)";
     gmRollResultDiv.textContent = resultText;
     logEvent(`GM rolled: +die=${posTotal} (initial ${posInitial}), -die=${negTotal} (initial ${negInitial}), Outcome=${diceOutcome}. Final Check = ${actingVehicle.driving} + ${diceOutcome} + ${modifier} = ${finalCheck}${boxcars ? " (Boxcars!)" : ""}`);
@@ -267,7 +309,7 @@ document.addEventListener('DOMContentLoaded', () => {
     return Math.floor(Math.random() * 6) + 1;
   }
 
-  // Roll an exploding die: given an initial roll, if 6, continue rolling.
+  // Roll an exploding die: if the initial roll is 6, keep rolling and add.
   function rollExplodingDie(initial) {
     let total = initial;
     while (initial === 6) {
@@ -280,15 +322,24 @@ document.addEventListener('DOMContentLoaded', () => {
   /******************************************************************************
    * 8. Action Form Submission: Calculate CP Change and update target vehicle.
    *
-   * For GM:
-   *   Final Check is taken from gmRollResultDiv.dataset.finalCheck.
-   * For Player:
-   *   Final Check = (entered roll result + player's modifier).
+   * In both GM and Player modes:
+   *   Final Check is obtained as follows:
+   *     - GM: from gmRollResultDiv.dataset.finalCheck.
+   *     - Player: (entered roll result + player's modifier).
+   *   Outcome = Final Check – (Target Vehicle's Driving Score)
+   *   If Outcome < 0, then CP Change is 0.
    *
-   * Outcome = Final Check – (Target Vehicle's Driving Score)
-   * If Outcome < 0, treat CP Change as 0.
-   * Otherwise, CP Change = Outcome + (Acting Vehicle's Squeal) – (Target Vehicle's Handling)
-   * For Driver Attack: CP Change = - (Outcome + 5)
+   * For Driving Check:
+   *   CP Change = Outcome + (Acting Vehicle's Squeal) – (Target's Handling)
+   *
+   * For Ramming/Sideswiping:
+   *   CP Change = Outcome + (Acting Vehicle's Crunch) – (Target's Frame)
+   *   Additionally, if Acting Vehicle's Frame is lower than Target's Frame,
+   *     Extra CP = (Target's Frame – Acting Vehicle's Frame) is added to the acting vehicle.
+   *   The same CP change (and extra, if any) is added to the respective Condition stats.
+   *
+   * For Driver Attack:
+   *   CP Change = – (Outcome + 5)
    *****************************************************************************/
   actionForm.addEventListener('submit', (e) => {
     e.preventDefault();
@@ -323,34 +374,42 @@ document.addEventListener('DOMContentLoaded', () => {
       logCalc += `Player Final Check: ${finalCheck} (Modifier: ${playerModifier}) `;
     }
 
-    // Outcome = Final Check - (Target Vehicle's Driving Score)
+    // Outcome = Final Check - (Target's Driving Score)
     outcome = finalCheck - targetVehicle.driving;
-    // If Outcome is negative, operation stops and CP change is 0.
+    logCalc += `| Outcome = ${finalCheck} - ${targetVehicle.driving} = ${outcome} `;
+    // If Outcome is negative, CP Change is 0.
     if (outcome < 0) {
       cpChange = 0;
-      logCalc += `| Outcome (${finalCheck} - ${targetVehicle.driving} = ${outcome}) is negative. CP Change = 0.`;
+      logCalc += `| Outcome is negative. CP Change = 0.`;
     } else {
-      logCalc += `| Outcome = ${finalCheck} - ${targetVehicle.driving} = ${outcome} `;
-      if (actionType === "driving" || actionType === "ramming") {
+      if (actionType === "driving") {
         cpChange = outcome + actingVehicle.squeal - targetVehicle.handling;
         logCalc += `| CP Change = ${outcome} + Acting Squeal (${actingVehicle.squeal}) - Target Handling (${targetVehicle.handling}) = ${cpChange}`;
+      } else if (actionType === "ramming") {
+        cpChange = outcome + actingVehicle.crunch - targetVehicle.frame;
+        logCalc += `| CP Change = ${outcome} + Acting Crunch (${actingVehicle.crunch}) - Target Frame (${targetVehicle.frame}) = ${cpChange}`;
+        // Extra CP for acting vehicle if its frame is lower than target's frame
+        if (actingVehicle.frame < targetVehicle.frame) {
+          const extraCP = targetVehicle.frame - actingVehicle.frame;
+          actingVehicle.chasePoints += extraCP;
+          actingVehicle.condition = (actingVehicle.condition || 0) + extraCP;
+          logCalc += ` | Extra CP for Acting Vehicle = ${extraCP} (Frame diff: ${targetVehicle.frame} - ${actingVehicle.frame})`;
+        }
+        // Also update Condition for target vehicle by same CP change.
+        targetVehicle.condition = (targetVehicle.condition || 0) + cpChange;
       } else if (actionType === "driverAttack") {
         cpChange = - (outcome + 5);
         logCalc += `| Driver Attack CP Change = - (${outcome} + 5) = ${cpChange}`;
       }
     }
-
-    const oldCP = targetVehicle.chasePoints;
+    const oldTargetCP = targetVehicle.chasePoints;
     targetVehicle.chasePoints += cpChange;
     if (targetVehicle.chasePoints < 0) targetVehicle.chasePoints = 0;
-    logCalc = `${actionType === "driving" ? "Driving Check" : actionType === "ramming" ? "Ramming/Sideswipe" : "Driver Attack"}: ` +
-              `Acting Vehicle (${actingVehicle.name}) Final Check = ${finalCheck}, Outcome = ${outcome}, ` +
-              `+ Acting Squeal (${actingVehicle.squeal}) - Target Handling (${targetVehicle.handling}) → CP Change = ${cpChange}. ` +
-              `(${targetVehicle.name}: ${oldCP} → ${targetVehicle.chasePoints} CP)`;
+    logCalc += ` → (${targetVehicle.name} CP: ${oldTargetCP} → ${targetVehicle.chasePoints})`;
     if (targetVehicle.chasePoints >= 35) {
       logCalc += ` - CRITICAL condition reached!`;
     }
-    logEvent(logCalc);
+    logEvent(`${actionType === "driving" ? "Driving Check" : actionType === "ramming" ? "Ramming/Sideswipe" : "Driver Attack"}: ` + logCalc);
     updateVehicleLists();
     actionForm.reset();
     gmRollResultDiv.textContent = "";

@@ -167,4 +167,204 @@ document.addEventListener('DOMContentLoaded', () => {
       li.innerHTML = `
         <h4>${v.name} (${v.control})</h4>
         <p>Acceleration: ${v.acceleration}</p>
-       
+        <p>Handling: ${v.handling}</p>
+        <p>Squeal: ${v.squeal}</p>
+        <p>Frame: ${v.frame}</p>
+        <p>Crunch: ${v.crunch}</p>
+        <p>Chase Points: <strong>${v.chasePoints}</strong></p>
+      `;
+
+      if (v.role === "Pursuer") {
+        pursuerList.appendChild(li);
+      } else {
+        evaderList.appendChild(li);
+      }
+    });
+  }
+
+  /******************************************************************************
+   * 5. Chase gap selection
+   *****************************************************************************/
+  chaseGapSelect.addEventListener('change', (e) => {
+    chaseGap = e.target.value;
+    logEvent(`Chase Gap set to: ${chaseGap}`);
+  });
+
+  /******************************************************************************
+   * 6. Toggle GM vs Player roll panels
+   *****************************************************************************/
+  function switchRollMode(mode) {
+    if (mode === "GM") {
+      gmRollPanel.style.display = "block";
+      playerRollPanel.style.display = "none";
+      // Make GM inputs required
+      gmDrivingScoreInput.required = true;
+      gmOpponentScoreInput.required = true;
+      // Remove required from player inputs
+      playerRollResultInput.required = false;
+      opponentScoreInput.required = false;
+    } else {
+      gmRollPanel.style.display = "none";
+      playerRollPanel.style.display = "block";
+      // Make player inputs required
+      playerRollResultInput.required = true;
+      opponentScoreInput.required = true;
+      // Remove required from GM inputs
+      gmDrivingScoreInput.required = false;
+      gmOpponentScoreInput.required = false;
+    }
+  }
+
+  rollModeRadios.forEach((radio) => {
+    radio.addEventListener('change', () => {
+      switchRollMode(radio.value);
+    });
+  });
+
+  // Initialize default
+  switchRollMode("GM");
+
+  /******************************************************************************
+   * 7. GM Dice Roll button
+   *****************************************************************************/
+  rollDiceButton.addEventListener('click', () => {
+    const gmDrivingScore = parseInt(gmDrivingScoreInput.value, 10);
+    const gmOpponentScore = parseInt(gmOpponentScoreInput.value, 10) || 0;
+    const modifier = parseInt(gmModifierInput.value, 10) || 0;
+
+    if (isNaN(gmDrivingScore)) {
+      alert("Please enter a valid GM Driving Score.");
+      return;
+    }
+    // Simulate 2d6
+    const die1 = rollDie();
+    const die2 = rollDie();
+    const isBoxcars = (die1 === 6 && die2 === 6);
+
+    // The raw dice sum
+    const diceSum = die1 + die2;
+
+    // We'll store the "final roll" as dice + gmDrivingScore + mod - gmOpponentScore
+    // but we won't apply the squeal/crunch or driver-attack formula yet
+    const finalRoll = diceSum + gmDrivingScore + modifier - gmOpponentScore;
+
+    let resultText = `Dice: ${die1}, ${die2} → ${diceSum}. 
+      Driving Score: ${gmDrivingScore}, Opponent: ${gmOpponentScore}, Mod: ${modifier}.
+      Final: ${finalRoll}`;
+    if (isBoxcars) {
+      resultText += "  (Boxcars!)";
+    }
+
+    gmRollResultDiv.textContent = resultText;
+    logEvent(`GM dice → ${die1}, ${die2}${isBoxcars ? "!" : ""}. 
+      Driving: ${gmDrivingScore}, Opponent: ${gmOpponentScore}, 
+      Mod: ${modifier}, => ${finalRoll}${isBoxcars ? "!" : ""}`);
+
+    // Store finalRoll in dataset for retrieval in the "Apply Action"
+    gmDrivingScoreInput.dataset.rollResult = finalRoll;
+  });
+
+  function rollDie() {
+    return Math.floor(Math.random() * 6) + 1;
+  }
+
+  /******************************************************************************
+   * 8. Action form submission
+   *****************************************************************************/
+  actionForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const actionType = actionTypeSelect.value;
+    const targetId = parseInt(targetVehicleSelect.value, 10);
+    const vehicle = vehicles.find((v) => v.id === targetId);
+    if (!vehicle) return;
+
+    const rollMode = document.querySelector('input[name="rollMode"]:checked').value;
+
+    let finalRoll = 0; // the net roll result (minus opponent) BEFORE adding squeal/crunch
+    let cpChange = 0;
+    let actionDescription = "";
+
+    if (rollMode === "GM") {
+      // Use the final roll from dataset
+      const storedRoll = parseInt(gmDrivingScoreInput.dataset.rollResult || "NaN", 10);
+      if (isNaN(storedRoll)) {
+        alert("Please roll the dice first (GM Mode).");
+        return;
+      }
+      finalRoll = storedRoll;
+    } else {
+      // Player mode: parse the player's result
+      const playerInput = playerRollResultInput.value.trim();
+      let rawRoll = parseInt(playerInput.replace('!', ''), 10);
+      if (isNaN(rawRoll)) {
+        alert("Please enter a valid roll result (e.g., 8 or 8!).");
+        return;
+      }
+      const oppScore = parseInt(opponentScoreInput.value, 10) || 0;
+      // finalRoll is (rawRoll - opponentScore)
+      finalRoll = rawRoll - oppScore;
+      actionDescription += `(Player Roll: ${playerInput}, Opponent: ${oppScore}) `;
+    }
+
+    // Now compute CP changes based on action type
+    // We'll add vehicle.squeal or vehicle.crunch if driving/ramming, or do driver attack logic
+    if (actionType === "driving") {
+      // final = finalRoll + squeal
+      cpChange = finalRoll + vehicle.squeal;
+      actionDescription += "Driving Check → ";
+    } else if (actionType === "ramming") {
+      // final = finalRoll + crunch
+      cpChange = finalRoll + vehicle.crunch;
+      actionDescription += "Ramming/Sideswipe → ";
+    } else if (actionType === "driverAttack") {
+      // final = - (finalRoll + 5)
+      // (finalRoll might be negative or positive from the dice perspective)
+      cpChange = -(finalRoll + 5);
+      actionDescription += "Driver Attack → ";
+    }
+
+    // Apply CP change
+    const oldCP = vehicle.chasePoints;
+    vehicle.chasePoints += cpChange;
+    if (vehicle.chasePoints < 0) {
+      vehicle.chasePoints = 0;
+    }
+
+    // Build the log message
+    actionDescription += `${vehicle.name} CP ${oldCP} → ${vehicle.chasePoints} (change: ${cpChange >= 0 ? "+" : ""}${cpChange})`;
+    if (vehicle.chasePoints >= 35) {
+      actionDescription += `. ${vehicle.name} has reached critical condition!`;
+    }
+
+    // Update UI
+    updateVehicleLists();
+    logEvent(actionDescription);
+
+    // Clear out GM roll result so you can't accidentally reuse it
+    gmDrivingScoreInput.dataset.rollResult = "";
+    gmRollResultDiv.textContent = "";
+    actionForm.reset();
+    // Switch back to GM mode as default
+    switchRollMode("GM");
+  });
+
+  /******************************************************************************
+   * 9. Reset chase
+   *****************************************************************************/
+  resetButton.addEventListener('click', () => {
+    vehicles.forEach((v) => {
+      v.chasePoints = 0;
+    });
+    updateVehicleLists();
+    logEvent("New chase started. All vehicles reset.");
+  });
+
+  /******************************************************************************
+   * 10. Log helper
+   *****************************************************************************/
+  function logEvent(message) {
+    const li = document.createElement('li');
+    li.textContent = message;
+    logList.appendChild(li);
+  }
+});

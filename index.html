@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Feng Shui 2 Vehicle Chase Tracker</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="manifest" href="manifest.json">
+</head>
+<body>
+  <header>
+    <h1>Feng Shui 2 Vehicle Chase Tracker</h1>
+  </header>
+  <main>
+    <!-- Vehicle Setup Section -->
+    <section id="vehicle-setup">
+      <h2>Add Vehicle</h2>
+      <form id="addVehicleForm">
+        <input type="text" id="vehicleName" placeholder="Vehicle Name" required>
+        <input type="number" id="acceleration" placeholder="Acceleration" required>
+        <input type="number" id="handling" placeholder="Handling" required>
+        <input type="number" id="frame" placeholder="Frame" required>
+        <button type="submit">Add Vehicle</button>
+      </form>
+    </section>
+
+    <!-- Vehicle List -->
+    <section id="vehicles">
+      <h2>Vehicles</h2>
+      <div id="vehicleList"></div>
+    </section>
+
+    <!-- Chase Actions -->
+    <section id="chaseActions">
+      <h2>Chase Actions</h2>
+      <form id="actionForm">
+        <label for="actionType">Action Type:</label>
+        <select id="actionType">
+          <option value="driving">Driving Check</option>
+          <option value="ramming">Ramming/Sideswipe</option>
+          <option value="driverAttack">Driver Attack</option>
+        </select>
+        <input type="number" id="actionOutcome" placeholder="Outcome" required>
+        <input type="number" id="actionModifier" placeholder="Modifier (optional)">
+        <label for="targetVehicle">Target Vehicle:</label>
+        <select id="targetVehicle"></select>
+        <button type="submit">Apply Action</button>
+      </form>
+    </section>
+
+    <!-- Event Log -->
+    <section id="eventLog">
+      <h2>Event Log</h2>
+      <ul id="logList"></ul>
+    </section>
+
+    <!-- Reset Button -->
+    <section id="resetSection">
+      <button id="resetChase">New Chase (Reset Vehicles)</button>
+    </section>
+  </main>
+  <script src="script.js"></script>
+</body>
+</html>

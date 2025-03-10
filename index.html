@@ -19,7 +19,7 @@
         <label for="vehicleType">Vehicle Type:</label>
         <select id="vehicleType" required>
           <option value="" disabled selected>Select vehicle type</option>
-          <!-- Predefined vehicles from the book -->
+          <!-- Predefined vehicles from the manual -->
           <option value="Motorcycle">Motorcycle</option>
           <option value="Snowmobile">Snowmobile</option>
           <option value="Horse">Horse</option>
@@ -48,7 +48,10 @@
 
         <input type="text" id="vehicleName" placeholder="Vehicle Name" required />
 
-        <!-- Manual inputs appear only if "Custom" is selected -->
+        <!-- Always request Driving Score -->
+        <input type="number" id="driving" placeholder="Driving Score" required />
+
+        <!-- Only for Custom vehicles: manual entry for Acceleration, Handling, Frame -->
         <div id="customStats" style="display: none;">
           <input type="number" id="acceleration" placeholder="Acceleration" />
           <input type="number" id="handling" placeholder="Handling" />
@@ -104,6 +107,9 @@
           <option value="driverAttack">Driver Attack</option>
         </select>
 
+        <label for="actingVehicle">Select Acting Vehicle:</label>
+        <select id="actingVehicle" required></select>
+
         <label for="targetVehicle">Select Target Vehicle:</label>
         <select id="targetVehicle" required></select>
 
@@ -116,12 +122,7 @@
 
         <!-- GM Roll Panel -->
         <div id="gmRollPanel">
-          <!-- The GM enters the final Driving Check result -->
-          <input type="number" id="gmDrivingScore" placeholder="Driving Check Result" />
-          <!-- GM enters opponent's Driving Score -->
-          <input type="number" id="gmOpponentScore" placeholder="Opponent's Driving Score" />
-          <!-- New: GM enters opponent's Handling -->
-          <input type="number" id="gmOpponentHandling" placeholder="Opponent's Handling" required />
+          <input type="number" id="gmDrivingBase" placeholder="Driving Check Base" />
           <input type="number" id="gmModifier" placeholder="Modifier (optional)" />
           <button type="button" id="rollDiceButton">Roll Dice (GM)</button>
           <div id="gmRollResult"></div>
@@ -130,9 +131,6 @@
         <!-- Player Roll Panel -->
         <div id="playerRollPanel" style="display: none;">
           <input type="text" id="playerRollResult" placeholder="Enter Roll Result (e.g., 18 or 18!)" />
-          <input type="number" id="opponentScore" placeholder="Opponent's Driving Score" />
-          <!-- New: Player enters opponent's Handling -->
-          <input type="number" id="playerOpponentHandling" placeholder="Opponent's Handling" required />
         </div>
 
         <button type="submit">Apply Action</button>

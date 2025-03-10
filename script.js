@@ -1,31 +1,34 @@
 /******************************************************************************
  * PREDEFINED VEHICLES
- * Each entry contains acceleration, handling, and frame.
- * Derived stats: Squeal = handling + 2, Crunch = frame + 2.
+ * Each entry includes: acceleration, handling, and frame.
+ * (No "driving" stat is included, since that is entered manually.)
+ * Derived stats:
+ *    Squeal = handling + 2
+ *    Crunch = frame + 2
  *****************************************************************************/
 const predefinedVehicles = {
   "Motorcycle": { acceleration: 8, handling: 8, frame: 0 },
   "Snowmobile": { acceleration: 8, handling: 6, frame: 0 },
-  "Horse": { acceleration: 6, handling: 7, frame: 0 },
-  "Family Sedan": { acceleration: 6, handling: 8, frame: 7 },
-  "Compact Car": { acceleration: 6, handling: 8, frame: 5 },
-  "Sport Utility Vehicle, Civilian": { acceleration: 6, handling: 6, frame: 8 },
-  "Sport Utility Vehicle, Security": { acceleration: 6, handling: 6, frame: 9 },
-  "Pickup Truck": { acceleration: 6, handling: 6, frame: 7 },
-  "Luxury Sedan": { acceleration: 7, handling: 8, frame: 7 },
+  "Horse": { acceleration: 6, handling: 6, frame: 0 },
+  "Family Sedan": { acceleration: 6, handling: 6, frame: 7 },
+  "Compact Car": { acceleration: 6, handling: 7, frame: 6 },
+  "Sport Utility Vehicle, Civilian": { acceleration: 6, handling: 6, frame: 7 },
+  "Sport Utility Vehicle, Security": { acceleration: 7, handling: 6, frame: 7 },
+  "Pickup Truck": { acceleration: 6, handling: 6, frame: 8 },
+  "Luxury Sedan": { acceleration: 8, handling: 7, frame: 7 },
   "Cop Car": { acceleration: 8, handling: 8, frame: 6 },
-  "Muscle Car": { acceleration: 8, handling: 7, frame: 7 },
-  "Sports Car": { acceleration: 9, handling: 8, frame: 5 },
-  "Jeep, Civilian": { acceleration: 7, handling: 7, frame: 6 },
-  "Jeep, Military": { acceleration: 8, handling: 7, frame: 6 },
-  "Armored Army Vehicle": { acceleration: 4, handling: 5, frame: 10 },
-  "Panel Van": { acceleration: 6, handling: 6, frame: 6 },
-  "Panel Truck": { acceleration: 6, handling: 6, frame: 7 },
+  "Muscle Car": { acceleration: 8, handling: 8, frame: 6 },
+  "Sports Car": { acceleration: 9, handling: 7, frame: 6 },
+  "Jeep, Civilian": { acceleration: 6, handling: 6, frame: 7 },
+  "Jeep, Military": { acceleration: 6, handling: 6, frame: 7 },
+  "Armored Army Vehicle": { acceleration: 6, handling: 6, frame: 8 },
+  "Panel Van": { acceleration: 6, handling: 6, frame: 8 },
+  "Panel Truck": { acceleration: 6, handling: 6, frame: 8 },
   "Eighteen Wheeler": { acceleration: 5, handling: 5, frame: 9 },
-  "Junker Car": { acceleration: 6, handling: 6, frame: 5 },
-  "Junker Pickup Truck": { acceleration: 5, handling: 6, frame: 5 },
-  "Vintage Van": { acceleration: 6, handling: 5, frame: 5 },
-  "Tank": { acceleration: 3, handling: 2, frame: 12 }
+  "Junker Car": { acceleration: 5, handling: 6, frame: 6 },
+  "Junker Pickup Truck": { acceleration: 5, handling: 5, frame: 7 },
+  "Vintage Van": { acceleration: 6, handling: 5, frame: 7 },
+  "Tank": { acceleration: 3, handling: 3, frame: 12 }
 };
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -33,46 +36,46 @@ document.addEventListener('DOMContentLoaded', () => {
   let vehicleIdCounter = 0;
   let chaseGap = "Far"; // Overall chase gap
 
-  // DOM Elements
+  // DOM Elements for vehicle setup
   const addVehicleForm = document.getElementById('addVehicleForm');
   const vehicleTypeSelect = document.getElementById('vehicleType');
   const customStatsDiv = document.getElementById('customStats');
   const vehicleNameInput = document.getElementById('vehicleName');
+  const drivingInput = document.getElementById('driving');  // Always requested
   const accelerationInput = document.getElementById('acceleration');
   const handlingInput = document.getElementById('handling');
   const frameInput = document.getElementById('frame');
   const vehicleRoleSelect = document.getElementById('vehicleRole');
   const controlTypeSelect = document.getElementById('controlType');
 
+  // DOM Elements for dashboard
   const chaseGapSelect = document.getElementById('chaseGap');
   const pursuerList = document.getElementById('pursuerList');
   const evaderList = document.getElementById('evaderList');
 
+  // DOM Elements for action form (dual dropdowns)
+  const actingVehicleSelect = document.getElementById('actingVehicle');
   const targetVehicleSelect = document.getElementById('targetVehicle');
   const actionForm = document.getElementById('actionForm');
   const actionTypeSelect = document.getElementById('actionType');
   const rollModeRadios = document.getElementsByName('rollMode');
 
-  // GM inputs
+  // GM mode inputs
   const gmRollPanel = document.getElementById('gmRollPanel');
-  const gmDrivingScoreInput = document.getElementById('gmDrivingScore');
-  const gmOpponentScoreInput = document.getElementById('gmOpponentScore');
-  const gmOpponentHandlingInput = document.getElementById('gmOpponentHandling');
+  const gmDrivingBaseInput = document.getElementById('gmDrivingBase');
   const gmModifierInput = document.getElementById('gmModifier');
   const rollDiceButton = document.getElementById('rollDiceButton');
   const gmRollResultDiv = document.getElementById('gmRollResult');
 
-  // Player inputs
+  // Player mode inputs
   const playerRollPanel = document.getElementById('playerRollPanel');
   const playerRollResultInput = document.getElementById('playerRollResult');
-  const opponentScoreInput = document.getElementById('opponentScore');
-  const playerOpponentHandlingInput = document.getElementById('playerOpponentHandling');
 
   const logList = document.getElementById('logList');
   const resetButton = document.getElementById('resetChase');
 
   /******************************************************************************
-   * 1. Toggle custom stats on "Custom" vehicle type
+   * 1. Toggle custom stats for "Custom" type
    *****************************************************************************/
   vehicleTypeSelect.addEventListener('change', (e) => {
     if (e.target.value === "Custom") {
@@ -97,7 +100,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const name = vehicleNameInput.value.trim();
     const role = vehicleRoleSelect.value;
     const control = controlTypeSelect.value;
-
+    // Get driving score from input (always provided)
+    const driving = parseInt(drivingInput.value, 10) || 0;
     let acceleration, handling, frame;
     if (type === "Custom") {
       acceleration = parseInt(accelerationInput.value, 10) || 0;
@@ -109,7 +113,6 @@ document.addEventListener('DOMContentLoaded', () => {
       handling = stats.handling;
       frame = stats.frame;
     }
-
     const squeal = handling + 2;
     const crunch = frame + 2;
 
@@ -120,6 +123,7 @@ document.addEventListener('DOMContentLoaded', () => {
       acceleration,
       handling,
       frame,
+      driving,      // Entered manually
       squeal,
       crunch,
       chasePoints: 0,
@@ -128,36 +132,42 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     vehicles.push(vehicle);
-    updateVehicleSelect();
+    updateVehicleDropdowns();
     updateVehicleLists();
     addVehicleForm.reset();
     customStatsDiv.style.display = "none";
     accelerationInput.required = false;
     handlingInput.required = false;
     frameInput.required = false;
-    logEvent(`Added vehicle: ${name} (Type: ${type}, Role: ${role}, Control: ${control})`);
+    logEvent(`Added vehicle: ${name} (Type: ${type}, Role: ${role}, Control: ${control}, Driving: ${driving})`);
   });
 
   /******************************************************************************
-   * 3. Update vehicle dropdown (target vehicle)
+   * 3. Update vehicle dropdowns for Acting and Target vehicles
    *****************************************************************************/
-  function updateVehicleSelect() {
+  function updateVehicleDropdowns() {
+    actingVehicleSelect.innerHTML = '';
     targetVehicleSelect.innerHTML = '';
-    vehicles.forEach((v) => {
-      const option = document.createElement('option');
-      option.value = v.id;
-      option.textContent = `${v.name} (${v.role}, ${v.control})`;
-      targetVehicleSelect.appendChild(option);
+    vehicles.forEach(v => {
+      const optionActing = document.createElement('option');
+      optionActing.value = v.id;
+      optionActing.textContent = `${v.name} (${v.role}, ${v.control})`;
+      actingVehicleSelect.appendChild(optionActing);
+
+      const optionTarget = document.createElement('option');
+      optionTarget.value = v.id;
+      optionTarget.textContent = `${v.name} (${v.role}, ${v.control})`;
+      targetVehicleSelect.appendChild(optionTarget);
     });
   }
 
   /******************************************************************************
-   * 4. Render vehicle cards in the dashboard lists
+   * 4. Render vehicle cards in dashboard lists with a "+" button for CP
    *****************************************************************************/
   function updateVehicleLists() {
     pursuerList.innerHTML = '';
     evaderList.innerHTML = '';
-    vehicles.forEach((v) => {
+    vehicles.forEach(v => {
       const li = document.createElement('li');
       li.className = "vehicleCard";
       li.innerHTML = `
@@ -165,13 +175,28 @@ document.addEventListener('DOMContentLoaded', () => {
         <p>Acceleration: ${v.acceleration}</p>
         <p>Handling: ${v.handling} (Squeal: ${v.squeal})</p>
         <p>Frame: ${v.frame} (Crunch: ${v.crunch})</p>
-        <p>Chase Points: <strong>${v.chasePoints}</strong></p>
+        <p>Driving Score: ${v.driving}</p>
+        <p class="cpContainer">Chase Points: <span id="cp-${v.id}">${v.chasePoints}</span>
+           <button data-id="${v.id}" class="incCP">+</button>
+        </p>
       `;
       if (v.role === "Pursuer") {
         pursuerList.appendChild(li);
       } else {
         evaderList.appendChild(li);
       }
+    });
+    // Attach event listeners to plus buttons for manually increasing CP
+    document.querySelectorAll('.incCP').forEach(button => {
+      button.addEventListener('click', () => {
+        const id = parseInt(button.dataset.id, 10);
+        const veh = vehicles.find(v => v.id === id);
+        if (veh) {
+          veh.chasePoints++;
+          updateVehicleLists();
+          logEvent(`Manually increased CP for ${veh.name} to ${veh.chasePoints}`);
+        }
+      });
     });
   }
 
@@ -190,24 +215,16 @@ document.addEventListener('DOMContentLoaded', () => {
     if (mode === "GM") {
       gmRollPanel.style.display = "block";
       playerRollPanel.style.display = "none";
-      gmDrivingScoreInput.required = true;
-      gmOpponentScoreInput.required = true;
-      gmOpponentHandlingInput.required = true;
+      gmDrivingBaseInput.required = true;
       playerRollResultInput.required = false;
-      opponentScoreInput.required = false;
-      playerOpponentHandlingInput.required = false;
     } else {
       gmRollPanel.style.display = "none";
       playerRollPanel.style.display = "block";
       playerRollResultInput.required = true;
-      opponentScoreInput.required = true;
-      playerOpponentHandlingInput.required = true;
-      gmDrivingScoreInput.required = false;
-      gmOpponentScoreInput.required = false;
-      gmOpponentHandlingInput.required = false;
+      gmDrivingBaseInput.required = false;
     }
   }
-  rollModeRadios.forEach((radio) => {
+  rollModeRadios.forEach(radio => {
     radio.addEventListener('change', () => {
       switchRollMode(radio.value);
     });
@@ -215,43 +232,25 @@ document.addEventListener('DOMContentLoaded', () => {
   switchRollMode("GM");
 
   /******************************************************************************
-   * 7. GM Roll Dice Button: simulate two d6 and compute roll result
+   * 7. GM Roll Dice Button: simulate 2d6 and compute final roll
    *****************************************************************************/
   rollDiceButton.addEventListener('click', () => {
-    const drivingCheck = parseInt(gmDrivingScoreInput.value, 10);
-    const opponentDriving = parseInt(gmOpponentScoreInput.value, 10) || 0;
+    const drivingBase = parseInt(gmDrivingBaseInput.value, 10);
     const modifier = parseInt(gmModifierInput.value, 10) || 0;
-
-    if (isNaN(drivingCheck)) {
-      alert("Please enter a valid Driving Check Result.");
+    if (isNaN(drivingBase)) {
+      alert("Please enter a valid Driving Check Base.");
       return;
     }
-
-    // Roll two dice
     const die1 = rollDie();
     const die2 = rollDie();
     const diceSum = die1 + die2;
     const isBoxcars = (die1 === 6 && die2 === 6);
-
-    // In GM mode, we let the dice add to the Driving Check.
-    // However, per the manual, the Outcome should be:
-    // Outcome = (Driving Check Result - Opponent's Driving Score)
-    // (The dice here can be seen as a random modifier if desired.)
-    // For our implementation, we’ll assume the GM's entered Driving Check already
-    // factors in the dice if desired. But if rolling, we compute:
-    const finalCheck = diceSum + drivingCheck + modifier; // full check result
-    const outcome = finalCheck - opponentDriving;
-    
-    // Store final outcome in dataset for use on action submission
-    gmDrivingScoreInput.dataset.rollResult = finalCheck;
-    
-    let resultText = `Dice: ${die1}, ${die2} (Sum: ${diceSum}) → Driving Check: ${finalCheck} `;
-    resultText += `Outcome: ${finalCheck} - ${opponentDriving} = ${outcome}`;
-    if (isBoxcars) {
-      resultText += "  (Boxcars!)";
-    }
+    const finalCheck = diceSum + drivingBase + modifier;
+    gmDrivingBaseInput.dataset.rollResult = finalCheck;
+    let resultText = `Dice: ${die1}, ${die2} (Sum: ${diceSum}) → Final Check: ${finalCheck}`;
+    if (isBoxcars) resultText += " (Boxcars!)";
     gmRollResultDiv.textContent = resultText;
-    logEvent(`GM rolled: ${die1}, ${die2}${isBoxcars ? "!" : ""}. Driving Check: ${finalCheck} (Outcome: ${outcome})`);
+    logEvent(`GM rolled: ${die1}, ${die2}${isBoxcars ? "!" : ""} → Final Check = ${finalCheck}`);
   });
 
   function rollDie() {
@@ -259,81 +258,80 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   /******************************************************************************
-   * 8. Action Form Submission: Apply action based on mode and formula
+   * 8. Action Form Submission: Apply action using dual-dropdown formula
    *
    * Formula (per manual):
-   * CP change = (Driving Check Result – Opponent's Driving Score) 
-   *             + (Acting Vehicle's Squeal) – (Opponent's Handling)
+   * Outcome = (Final Roll – Target's Driving Score)
+   * CP Change = Outcome + (Acting Vehicle's Squeal) – (Target's Handling)
+   *
+   * For Driver Attack: CP Change = - (Outcome + 5)
    *****************************************************************************/
   actionForm.addEventListener('submit', (e) => {
     e.preventDefault();
     const actionType = actionTypeSelect.value;
+    const actingId = parseInt(actingVehicleSelect.value, 10);
     const targetId = parseInt(targetVehicleSelect.value, 10);
-    const vehicle = vehicles.find((v) => v.id === targetId);
-    if (!vehicle) return;
+    const actingVehicle = vehicles.find(v => v.id === actingId);
+    const targetVehicle = vehicles.find(v => v.id === targetId);
+    if (!actingVehicle || !targetVehicle) return;
     const rollMode = document.querySelector('input[name="rollMode"]:checked').value;
-    let drivingCheckResult = 0;
-    let opponentDriving = 0;
-    let opponentHandling = 0;
+    let finalRoll = 0;
     let outcome = 0;
     let cpChange = 0;
-    let actionDescription = "";
+    let logCalc = "";
 
     if (rollMode === "GM") {
-      drivingCheckResult = parseInt(gmDrivingScoreInput.dataset.rollResult || "0", 10);
-      opponentDriving = parseInt(gmOpponentScoreInput.value, 10) || 0;
-      opponentHandling = parseInt(gmOpponentHandlingInput.value, 10) || 0;
-      outcome = drivingCheckResult - opponentDriving;
-      actionDescription += `(GM Roll: ${drivingCheckResult} - Opponent Driving: ${opponentDriving} = Outcome: ${outcome}) `;
+      finalRoll = parseInt(gmDrivingBaseInput.dataset.rollResult || "0", 10);
+      if (isNaN(finalRoll) || finalRoll === 0) {
+        alert("Please roll the dice first (GM Mode).");
+        return;
+      }
+      logCalc += `GM Final Check: ${finalRoll} `;
     } else {
-      // Player mode: player enters final Driving Check result manually (e.g., "18" or "18!")
-      let playerInput = playerRollResultInput.value.trim();
-      const rawPlayerResult = parseInt(playerInput.replace('!', ''), 10);
-      if (isNaN(rawPlayerResult)) {
+      const playerInput = playerRollResultInput.value.trim();
+      finalRoll = parseInt(playerInput.replace('!', ''), 10);
+      if (isNaN(finalRoll)) {
         alert("Please enter a valid roll result (e.g., 18 or 18!).");
         return;
       }
-      opponentDriving = parseInt(opponentScoreInput.value, 10) || 0;
-      opponentHandling = parseInt(playerOpponentHandlingInput.value, 10) || 0;
-      outcome = rawPlayerResult - opponentDriving;
-      actionDescription += `(Player Roll: ${rawPlayerResult} - Opponent Driving: ${opponentDriving} = Outcome: ${outcome}) `;
+      logCalc += `Player Roll: ${finalRoll} `;
     }
 
-    // Now apply the formula based on action type.
-    // For both Driving Check and Ramming/Sideswipe, the manual formula is the same:
-    // CP = Outcome + (Acting Vehicle's Squeal) - (Opponent's Handling)
-    // For Driver Attack, CP is subtracted and an extra -5 is applied.
+    // Outcome = Final Roll - (Target's Driving Score)
+    outcome = finalRoll - targetVehicle.driving;
+    logCalc += `| Outcome = ${finalRoll} - ${targetVehicle.driving} = ${outcome} `;
+
     if (actionType === "driving" || actionType === "ramming") {
-      cpChange = outcome + vehicle.squeal - opponentHandling;
-      actionDescription = (actionType === "driving" ? "Driving Check" : "Ramming/Sideswipe") + " → " + actionDescription;
+      cpChange = outcome + actingVehicle.squeal - targetVehicle.handling;
+      logCalc += `| CP Change = ${outcome} + Acting Squeal (${actingVehicle.squeal}) - Target Handling (${targetVehicle.handling}) = ${cpChange}`;
     } else if (actionType === "driverAttack") {
-      cpChange = - (outcome + 5); // No bonus or subtraction of Handling here per our version
-      actionDescription = "Driver Attack → " + actionDescription;
+      cpChange = - (outcome + 5);
+      logCalc += `| Driver Attack CP Change = - (${outcome} + 5) = ${cpChange}`;
     }
 
-    const oldCP = vehicle.chasePoints;
-    vehicle.chasePoints += cpChange;
-    if (vehicle.chasePoints < 0) vehicle.chasePoints = 0;
-
-    actionDescription += `${vehicle.name}: ${oldCP} → ${vehicle.chasePoints} CP (Change: ${cpChange >= 0 ? "+" : ""}${cpChange})`;
-    if (vehicle.chasePoints >= 35) {
-      actionDescription += `. ${vehicle.name} has reached critical condition!`;
+    const oldCP = targetVehicle.chasePoints;
+    targetVehicle.chasePoints += cpChange;
+    if (targetVehicle.chasePoints < 0) targetVehicle.chasePoints = 0;
+    logCalc = `${actionType === "driving" ? "Driving Check" : actionType === "ramming" ? "Ramming/Sideswipe" : "Driver Attack"}: ` +
+              `Acting Vehicle (${actingVehicle.name}) Roll = ${finalRoll}, Outcome = ${outcome}, ` +
+              `+ Acting Squeal (${actingVehicle.squeal}) - Target Handling (${targetVehicle.handling}) → CP Change = ${cpChange}. ` +
+              `(${targetVehicle.name}: ${oldCP} → ${targetVehicle.chasePoints} CP)`;
+    if (targetVehicle.chasePoints >= 35) {
+      logCalc += ` - CRITICAL condition reached!`;
     }
+    logEvent(logCalc);
     updateVehicleLists();
-    logEvent(actionDescription);
-
-    // Clear GM roll result so it doesn't carry over
-    gmDrivingScoreInput.dataset.rollResult = "";
-    gmRollResultDiv.textContent = "";
     actionForm.reset();
+    gmRollResultDiv.textContent = "";
+    gmDrivingBaseInput.dataset.rollResult = "";
     switchRollMode("GM");
   });
 
   /******************************************************************************
-   * 9. Reset Chase: Reset all vehicles' CP
+   * 9. Reset Chase: Reset CP for all vehicles
    *****************************************************************************/
   resetButton.addEventListener('click', () => {
-    vehicles.forEach((v) => {
+    vehicles.forEach(v => {
       v.chasePoints = 0;
     });
     updateVehicleLists();
@@ -341,7 +339,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   /******************************************************************************
-   * 10. Log Helper
+   * 10. Log Helper: Append message to event log
    *****************************************************************************/
   function logEvent(message) {
     const li = document.createElement('li');

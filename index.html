@@ -19,7 +19,7 @@
         <label for="vehicleType">Vehicle Type:</label>
         <select id="vehicleType" required>
           <option value="" disabled selected>Select vehicle type</option>
-          <!-- Predefined vehicles from the book table -->
+          <!-- Predefined vehicles from the book -->
           <option value="Motorcycle">Motorcycle</option>
           <option value="Snowmobile">Snowmobile</option>
           <option value="Horse">Horse</option>
@@ -104,7 +104,7 @@
           <option value="driverAttack">Driver Attack</option>
         </select>
 
-        <label for="targetVehicle">Select Vehicle:</label>
+        <label for="targetVehicle">Select Target Vehicle:</label>
         <select id="targetVehicle" required></select>
 
         <!-- Roll Mode: GM or Player -->
@@ -116,17 +116,23 @@
 
         <!-- GM Roll Panel -->
         <div id="gmRollPanel">
-          <input type="number" id="gmDrivingScore" placeholder="GM Driving Score" />
+          <!-- The GM enters the final Driving Check result -->
+          <input type="number" id="gmDrivingScore" placeholder="Driving Check Result" />
+          <!-- GM enters opponent's Driving Score -->
           <input type="number" id="gmOpponentScore" placeholder="Opponent's Driving Score" />
+          <!-- New: GM enters opponent's Handling -->
+          <input type="number" id="gmOpponentHandling" placeholder="Opponent's Handling" required />
           <input type="number" id="gmModifier" placeholder="Modifier (optional)" />
-          <button type="button" id="rollDiceButton">Roll Dice</button>
+          <button type="button" id="rollDiceButton">Roll Dice (GM)</button>
           <div id="gmRollResult"></div>
         </div>
 
         <!-- Player Roll Panel -->
         <div id="playerRollPanel" style="display: none;">
-          <input type="text" id="playerRollResult" placeholder="Enter Roll Result (e.g., 8 or 8!)" />
+          <input type="text" id="playerRollResult" placeholder="Enter Roll Result (e.g., 18 or 18!)" />
           <input type="number" id="opponentScore" placeholder="Opponent's Driving Score" />
+          <!-- New: Player enters opponent's Handling -->
+          <input type="number" id="playerOpponentHandling" placeholder="Opponent's Handling" required />
         </div>
 
         <button type="submit">Apply Action</button>

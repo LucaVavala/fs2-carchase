@@ -7,6 +7,7 @@
  *    Crunch = frame + 2
  *****************************************************************************/
 const predefinedVehicles = {
+  "73 Chevelle": { acceleration: 8, handling: 9, frame: 6 },
   "Motorcycle": { acceleration: 8, handling: 8, frame: 0 },
   "Snowmobile": { acceleration: 8, handling: 6, frame: 0 },
   "Horse": { acceleration: 6, handling: 6, frame: 0 },
@@ -73,6 +74,11 @@ document.addEventListener('DOMContentLoaded', () => {
   const logList = document.getElementById('logList');
   const resetButton = document.getElementById('resetChase');
 
+  // Data management buttons
+  const exportButton = document.getElementById('exportButton');
+  const importButton = document.getElementById('importButton');
+  const importFileInput = document.getElementById('importFileInput');
+
   /******************************************************************************
    * 1. Toggle custom stats for "Custom" type
    *****************************************************************************/
@@ -123,7 +129,7 @@ document.addEventListener('DOMContentLoaded', () => {
       acceleration,
       handling,
       frame,
-      driving,      // Entered manually
+      driving,
       squeal,
       crunch,
       chasePoints: 0,
@@ -163,8 +169,8 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   /******************************************************************************
-   * 4. Render vehicle cards in dashboard lists with CP and Condition,
-   *    each with "+" and "–" buttons.
+   * 4. Render vehicle cards in dashboard lists with CP, Condition,
+   *    and "Remove" button.
    *****************************************************************************/
   function updateVehicleLists() {
     pursuerList.innerHTML = '';
@@ -186,6 +192,7 @@ document.addEventListener('DOMContentLoaded', () => {
            <button data-id="${v.id}" class="incCond">+</button>
            <button data-id="${v.id}" class="decCond">–</button>
         </p>
+        <p><button data-id="${v.id}" class="removeVehicle">Remove</button></p>
       `;
       if (v.role === "Pursuer") {
         pursuerList.appendChild(li);
@@ -193,6 +200,7 @@ document.addEventListener('DOMContentLoaded', () => {
         evaderList.appendChild(li);
       }
     });
+    // Attach event listeners to CP buttons
     document.querySelectorAll('.incCP').forEach(button => {
       button.addEventListener('click', () => {
         const id = parseInt(button.dataset.id, 10);
@@ -216,6 +224,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       });
     });
+    // Attach event listeners to Condition buttons
     document.querySelectorAll('.incCond').forEach(button => {
       button.addEventListener('click', () => {
         const id = parseInt(button.dataset.id, 10);
@@ -237,6 +246,16 @@ document.addEventListener('DOMContentLoaded', () => {
           updateVehicleLists();
           logEvent(`Manually decreased Condition for ${veh.name} to ${veh.condition}`);
         }
+      });
+    });
+    // Attach event listeners to Remove buttons
+    document.querySelectorAll('.removeVehicle').forEach(button => {
+      button.addEventListener('click', () => {
+        const id = parseInt(button.dataset.id, 10);
+        vehicles = vehicles.filter(v => v.id !== id);
+        updateVehicleDropdowns();
+        updateVehicleLists();
+        logEvent(`Removed vehicle with ID ${id}`);
       });
     });
   }
@@ -322,7 +341,7 @@ document.addEventListener('DOMContentLoaded', () => {
    *         - GM: from gmRollResultDiv.dataset.finalCheck.
    *         - Player: (entered roll result + player's modifier).
    *      Outcome = Final Check – (Target's Driving Score).
-   *      If Outcome < 0, CP Change = 0.
+   *      If Outcome < 0, then CP Change = 0.
    *
    *    For Driving Check:
    *      CP Change = Outcome + (Acting Vehicle's Squeal) – (Target's Handling).
@@ -331,7 +350,7 @@ document.addEventListener('DOMContentLoaded', () => {
    *      CP Change = Outcome + (Acting Vehicle's Crunch) – (Target's Frame).
    *      Additionally, if Acting Vehicle's Frame < Target's Frame,
    *         Extra CP = (Target's Frame – Acting Vehicle's Frame) is added to the acting vehicle.
-   *      The same CP Change (and extra, if any) is added to the Condition stat of the target.
+   *      The same CP Change (and extra, if any) is added to the Target's Condition stat.
    *
    *    For Driver Attack:
    *      CP Change = - (Outcome + 5).
@@ -389,7 +408,7 @@ document.addEventListener('DOMContentLoaded', () => {
           actingVehicle.condition = (actingVehicle.condition || 0) + extraCP;
           logCalc += ` | Extra CP for Acting Vehicle = ${extraCP} (Frame diff: ${targetVehicle.frame} - ${actingVehicle.frame})`;
         }
-        // For ramming actions, update Condition for target vehicle by same CP Change.
+        // For ramming actions, update Target's Condition stat by the CP Change.
         targetVehicle.condition = (targetVehicle.condition || 0) + cpChange;
       } else if (actionType === "driverAttack") {
         cpChange = - (outcome + 5);
@@ -420,6 +439,46 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     updateVehicleLists();
     logEvent("New chase started. All vehicles reset.");
+  });
+
+  /******************************************************************************
+   * 10. Export / Import Data
+   *****************************************************************************/
+  exportButton.addEventListener('click', () => {
+    const dataStr = JSON.stringify(vehicles);
+    const blob = new Blob([dataStr], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "vehicles.json";
+    a.click();
+    URL.revokeObjectURL(url);
+    logEvent("Exported data.");
+  });
+
+  importButton.addEventListener('click', () => {
+    importFileInput.click();
+  });
+
+  importFileInput.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(evt) {
+      try {
+        const importedVehicles = JSON.parse(evt.target.result);
+        vehicles = importedVehicles;
+        // Update vehicleIdCounter to be higher than any imported ID.
+        const maxId = vehicles.reduce((max, v) => Math.max(max, v.id), 0);
+        vehicleIdCounter = maxId + 1;
+        updateVehicleDropdowns();
+        updateVehicleLists();
+        logEvent("Imported data successfully.");
+      } catch (error) {
+        alert("Failed to import data: " + error);
+      }
+    };
+    reader.readAsText(file);
   });
 
   /******************************************************************************

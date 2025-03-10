@@ -75,16 +75,16 @@ ul {
   margin: 0.2em 0;
 }
 
-.cpContainer {
+.cpContainer, .condContainer {
   display: flex;
   align-items: center;
 }
 
-.cpContainer span {
+.cpContainer span, .condContainer span {
   margin-right: 0.5em;
 }
 
-.cpContainer button {
+.cpContainer button, .condContainer button {
   font-size: 0.8em;
   padding: 0.2em 0.4em;
   margin-left: 0.3em;
